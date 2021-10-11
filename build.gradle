@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
+}
+
+group 'org.weditor'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {}
+javafx {
+    modules = [ 'javafx.controls' ]
+}
+
+application {
+    mainClass = 'org.weditor.WEditor'
+}
+
+compileJava {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Werror"
+}
