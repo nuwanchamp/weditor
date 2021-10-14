@@ -3,28 +3,35 @@ package org.weditor;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-git import javafx.scene.Scene;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import javafx.scene.layout.VBox;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
+
 public class WEditor extends Application {
+    private Set<Class<?>> handlers = new HashSet<Class<?>>();
+    private Object mutex = new Object();
 
     public static void main(String[] args) {
         launch(args);
     }
 
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage primaryStage) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         var localeString = getParameters().getNamed().get("locale");
-        if(localeString != null)
-        {
+        if (localeString != null) {
             // FIXME: A locale was specified on the command-line. What are you going to do about it? ;-)
         }
         // Display Main Editor
         this.display(primaryStage);
     }
-    public void  display(Stage stage){
+
+    public void display(Stage stage) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         // Window Properties
         stage.setTitle("W-Editor");
         stage.setMinWidth(1000);
@@ -58,12 +65,10 @@ public class WEditor extends Application {
 
 
         // Buttons
-        Button dateBtn = new Button("Date"); // Will be replaced by Date Plugin
         Button findBtn = new Button("Find"); // Will be replaced by Find Plugin
 
         // ToolBar
         ToolBar toolBar = new ToolBar();
-        toolBar.getItems().add(dateBtn);
         toolBar.getItems().add(findBtn);
 
 
@@ -88,12 +93,59 @@ public class WEditor extends Application {
             @Override
             public void handle(ActionEvent event) {
                 System.out.println("Clicked :)");
+                synchronized (mutex) {
+                    for (Class<?> handler : handlers) {
+                        Object pluginObj = null;
+                        try {
+                            pluginObj = handler.getDeclaredConstructor().newInstance();
+                        } catch (InstantiationException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        } catch (NoSuchMethodException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            Method onLoadMethod = handler.getDeclaredMethod("onLoad");
+                            String control = (String) onLoadMethod.invoke(pluginObj);
+                            String[] elem = control.split("\\.");
+                            Button pluginBtn = new Button(elem[0]);
+                            toolBar.getItems().add(pluginBtn);
+                            Object finalPluginObj = pluginObj;
+                            pluginBtn.setOnAction(new EventHandler<ActionEvent>() {
+                                @Override
+                                public void handle(ActionEvent event) {
+                                    try {
+                                        Method pluginBtnClick = handler.getDeclaredMethod(elem[1]);
+                                        pluginBtnClick.invoke(finalPluginObj);
+                                    } catch (NoSuchMethodException e) {
+                                        e.printStackTrace();
+                                    } catch (InvocationTargetException e) {
+                                        e.printStackTrace();
+                                    } catch (IllegalAccessException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
+                        } catch (NoSuchMethodException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }
             }
         };
-
+        Class<?> pluginClass = Class.forName("textEditor.DatePlugin");
+        handlers.add(pluginClass);
 
         // Save Menu event handler
-        menuItem1.setOnAction(action);
+        menuItem5.setOnAction(action);
 
 
     }

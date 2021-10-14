@@ -11,7 +11,10 @@ repositories {
     mavenCentral()
 }
 
-dependencies {}
+dependencies {
+    implementation project(':API')
+    implementation project(':DatePlugin')
+}
 javafx {
     modules = [ 'javafx.controls' ]
 }
