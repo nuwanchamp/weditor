@@ -1,12 +1,15 @@
 package org.weditor;
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import javafx.scene.layout.VBox;
+import org.api.TextAreaController;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -16,6 +19,7 @@ import java.util.Set;
 public class WEditor extends Application {
     private Set<Class<?>> handlers = new HashSet<Class<?>>();
     private Object mutex = new Object();
+    public TextAreaController tac ;
 
     public static void main(String[] args) {
         launch(args);
@@ -75,6 +79,7 @@ public class WEditor extends Application {
         // Text Area
         TextArea textArea = new TextArea();
         textArea.setMinHeight(800);
+        tac = new TextAreaController(textArea);
 
 
         // Layout Box
@@ -118,8 +123,8 @@ public class WEditor extends Application {
                                 @Override
                                 public void handle(ActionEvent event) {
                                     try {
-                                        Method pluginBtnClick = handler.getDeclaredMethod(elem[1]);
-                                        pluginBtnClick.invoke(finalPluginObj);
+                                        Method pluginBtnClick = handler.getDeclaredMethod(elem[1], TextAreaController.class);
+                                        pluginBtnClick.invoke(finalPluginObj, tac);
                                     } catch (NoSuchMethodException e) {
                                         e.printStackTrace();
                                     } catch (InvocationTargetException e) {
@@ -147,6 +152,13 @@ public class WEditor extends Application {
         // Save Menu event handler
         menuItem5.setOnAction(action);
 
+        textArea.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                System.out.println("Changed");
+            }
+        });
 
     }
 }
+
